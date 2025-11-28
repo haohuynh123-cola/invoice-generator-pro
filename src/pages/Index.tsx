@@ -26,6 +26,7 @@ export interface InvoiceData {
   items: InvoiceItem[];
   taxRate: number;
   notes: string;
+  logo?: string;
 }
 
 const Index = () => {
@@ -42,6 +43,7 @@ const Index = () => {
     items: [{ id: "1", description: "", quantity: 1, price: 0 }],
     taxRate: 0,
     notes: "",
+    logo: undefined,
   });
 
   return (

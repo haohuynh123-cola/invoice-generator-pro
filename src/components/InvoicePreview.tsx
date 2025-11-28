@@ -4,6 +4,8 @@ import { Separator } from "@/components/ui/separator";
 import { FileText, Printer, Download } from "lucide-react";
 import { InvoiceData } from "@/pages/Index";
 import { toast } from "sonner";
+import { pdf } from '@react-pdf/renderer';
+import InvoicePDF from "./InvoicePDF";
 
 interface InvoicePreviewProps {
   invoiceData: InvoiceData;
@@ -22,8 +24,32 @@ const InvoicePreview = ({ invoiceData }: InvoicePreviewProps) => {
     toast.success("Opening print dialog...");
   };
 
-  const handleDownload = () => {
-    toast.info("PDF generation coming soon! Use print for now.");
+  const handleDownload = async () => {
+    try {
+      toast.loading("Generating PDF...");
+      
+      // Generate PDF blob
+      const blob = await pdf(
+        <InvoicePDF invoiceData={invoiceData} logo={invoiceData.logo} />
+      ).toBlob();
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${invoiceData.invoiceNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.dismiss();
+      toast.success("PDF downloaded successfully!");
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      toast.dismiss();
+      toast.error("Failed to generate PDF. Please try again.");
+    }
   };
 
   return (
@@ -46,9 +72,17 @@ const InvoicePreview = ({ invoiceData }: InvoicePreviewProps) => {
         <div className="flex items-start justify-between mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <FileText className="w-6 h-6 text-primary" />
-              </div>
+              {invoiceData.logo ? (
+                <img 
+                  src={invoiceData.logo} 
+                  alt="Company logo" 
+                  className="w-12 h-12 object-contain"
+                />
+              ) : (
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+              )}
               <h1 className="text-3xl font-bold text-foreground">INVOICE</h1>
             </div>
             <p className="text-sm text-muted-foreground">
