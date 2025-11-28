@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import InvoiceForm from "@/components/InvoiceForm";
 import InvoicePreview from "@/components/InvoicePreview";
-import { FileText } from "lucide-react";
+import InvoiceHistory from "@/components/InvoiceHistory";
+import { FileText, Save } from "lucide-react";
+import { toast } from "sonner";
 import invoiceHero from "@/assets/invoice-hero.jpg";
+import { useInvoiceHistory, SavedInvoice } from "@/hooks/useInvoiceHistory";
 
 export interface InvoiceItem {
   id: string;
@@ -30,6 +34,9 @@ export interface InvoiceData {
 }
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState("create");
+  const { history, saveInvoice, deleteInvoice, clearHistory } = useInvoiceHistory();
+  
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
     invoiceDate: new Date().toISOString().split('T')[0],
@@ -45,6 +52,32 @@ const Index = () => {
     notes: "",
     logo: undefined,
   });
+
+  const handleSaveInvoice = () => {
+    // Validate required fields
+    if (!invoiceData.fromCompany || !invoiceData.toCompany) {
+      toast.error("Please fill in company names before saving");
+      return;
+    }
+
+    if (invoiceData.items.some(item => !item.description || item.price <= 0)) {
+      toast.error("Please complete all line items before saving");
+      return;
+    }
+
+    saveInvoice(invoiceData);
+    toast.success("Invoice saved to history!");
+  };
+
+  const handleLoadInvoice = (invoice: InvoiceData) => {
+    setInvoiceData(invoice);
+    setActiveTab("create");
+  };
+
+  const handleViewInvoice = (invoice: SavedInvoice) => {
+    setInvoiceData(invoice);
+    setActiveTab("preview");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,10 +106,18 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12 max-w-7xl">
-        <Tabs defaultValue="create" className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8">
             <TabsTrigger value="create">Create Invoice</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="history">
+              History
+              {history.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
+                  {history.length}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="create" className="space-y-6">
@@ -86,10 +127,32 @@ const Index = () => {
                 setInvoiceData={setInvoiceData}
               />
             </Card>
+            <div className="flex justify-center">
+              <Button onClick={handleSaveInvoice} size="lg" className="gap-2">
+                <Save className="w-5 h-5" />
+                Save to History
+              </Button>
+            </div>
           </TabsContent>
           
           <TabsContent value="preview">
             <InvoicePreview invoiceData={invoiceData} />
+            <div className="flex justify-center mt-6">
+              <Button onClick={handleSaveInvoice} variant="outline" className="gap-2">
+                <Save className="w-5 h-5" />
+                Save to History
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <InvoiceHistory
+              history={history}
+              onLoadInvoice={handleLoadInvoice}
+              onDeleteInvoice={deleteInvoice}
+              onClearHistory={clearHistory}
+              onViewInvoice={handleViewInvoice}
+            />
           </TabsContent>
         </Tabs>
       </div>
