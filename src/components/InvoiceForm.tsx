@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import { InvoiceData, InvoiceItem } from "@/pages/Index";
+import LogoUpload from "./LogoUpload";
 
 interface InvoiceFormProps {
   invoiceData: InvoiceData;
@@ -43,6 +44,15 @@ const InvoiceForm = ({ invoiceData, setInvoiceData }: InvoiceFormProps) => {
 
   return (
     <div className="space-y-8">
+      {/* Logo Upload */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-4 text-foreground">Branding</h2>
+        <LogoUpload
+          logo={invoiceData.logo}
+          onLogoChange={(logo) => handleInputChange("logo", logo || "")}
+        />
+      </div>
+
       {/* Invoice Details */}
       <div>
         <h2 className="text-2xl font-semibold mb-4 text-foreground">Invoice Details</h2>
